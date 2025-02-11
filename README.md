@@ -44,6 +44,13 @@ STORAGE=postgres make -f MakeFile start
 STORAGE=postgres make -f MakeFile stop
 ```
 
+# Тестирование
+## Запуск юнит-тестов
+```
+make -f MakeFile test
+make -f MakeFile test-coverage
+```
+
 # API
 
 > 1) Тело запроса/ответа - в формате JSON.

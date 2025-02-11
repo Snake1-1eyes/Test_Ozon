@@ -14,3 +14,12 @@ ifeq ($(STORAGE),postgres)
 else
 	docker compose -f docker-compose.inmemory.yml down --volumes
 endif
+
+test:
+	go test -v ./...
+
+test-coverage:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+.PHONY: lint start stop test test-coverage
