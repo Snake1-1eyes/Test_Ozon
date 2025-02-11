@@ -1,5 +1,5 @@
 # Сборка и запуск
-1. Убедитесь, что порт 5432 ничем не занят. Если занят - освободить.
+1. Убедитесь, что порты 5432 и 9090 ничем не заняты. Если заняты - освободить.
 2. В корне проекта создайте файл .env, пример содержания:</b>
 ```
 DATABASE_URL=postgres://postgres:postgres@postgres:5432/testdb?sslmode=disable</br>
@@ -52,7 +52,7 @@ make -f MakeFile test-coverage
 ```
 
 # API
-
+### Важный момент: Запросы по HTTP по 8080 портуЮ одновременно по 9090 работает GRPC
 > 1) Тело запроса/ответа - в формате JSON.
 > 2) В случае ошибки возвращается необходимый HTTP код, в теле содержится описание ошибки (пример: ```{"error": "something went wrong"}```).
 
@@ -64,7 +64,7 @@ make -f MakeFile test-coverage
 - Тело ответа:
     - shortURL - уникальная сокращенная ссылка, присвоенная данному адресу URL.
 
-**Пример**
+**Пример HTTP**
 
 Запрос:
 
@@ -84,13 +84,28 @@ curl --location 'http://localhost:8080/api/v1/create' \
 }
 ```
 
+**Пример GRPC**
+Запрос: не разобрался как сохранить коллекцию из postman...
+
+```
+{"original_url": "https://www.ozon.ru/product/chistaya-arhitektura-iskusstvo-razrabotki-programmnogo-obespecheniya-martin-robert-144499396/?at=XQtkZn4kvhDXMzoMurR1G6nc5pXQ77sq8vqlNfgVrLqo&avtc=1&avte=4&avts=1739295310&keywords=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D1%80%D0%BE%D0%B1%D0%B5%D1%80%D1%82+%D0%BC%D0%B0%D1%80%D1%82%D0%B8%D0%BD"}
+```
+
+Ответ:
+
+```
+{
+    "short_url": "n6hZ_tlF0B"
+}
+```
+
 ## GET /api/v1/get
 Восстановление оригинального URL.
 
 - Тело ответа:
     - originalURL - оригинальный URL.
 
-**Пример**
+**Пример HTTP**
 
 Запрос:
 
@@ -110,14 +125,32 @@ curl --location --request GET 'http://localhost:8080/api/v1/get' \
 }
 ```
 
+**Пример GRPC**
+
+Запрос:
+
+```
+{"short_url": "n6hZ_tlF0B"}
+```
+
+Ответ:
+
+```
+{
+    "original_url": "https://www.ozon.ru/product/chistaya-arhitektura-iskusstvo-razrabotki-programmnogo-obespecheniya-martin-robert-144499396/?at=XQtkZn4kvhDXMzoMurR1G6nc5pXQ77sq8vqlNfgVrLqo&avtc=1&avte=4&avts=1739295310&keywords=%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0+%D1%80%D0%BE%D0%B1%D0%B5%D1%80%D1%82+%D0%BC%D0%B0%D1%80%D1%82%D0%B8%D0%BD"
+}
+```
+
 ## TODO
 - Сделать нормальные тесты
 - Улучшить или заменить алгоритм сокращения ссылок
 - Сделать логирование
 - Сделать конфиг
+- swagger docs
 - Метрики
 
 ## Что выполнено:
+- Реализована работа по http и grpc
 - Работа через postgres или inmemeory хранилище
 - Рабочий конфиг для запуска приложения в докере
 - Реализовано API, указанное в задании

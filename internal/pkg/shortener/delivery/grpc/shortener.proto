@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/delivery/grpc;shortenerpb";
+
+service ShortenerService {
+  rpc CreateShortLink(CreateShortLinkRequest) returns (CreateShortLinkResponse);
+  rpc GetShortLink(GetShortLinkRequest) returns (GetShortLinkResponse);
+}
+
+message CreateShortLinkRequest {
+  string original_url = 1;
+}
+
+message CreateShortLinkResponse {
+  string short_url = 1;
+}
+
+message GetShortLinkRequest {
+  string short_url = 1;
+}
+
+message GetShortLinkResponse {
+  string original_url = 1;
+}

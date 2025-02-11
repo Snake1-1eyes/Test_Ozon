@@ -12,6 +12,6 @@ WORKDIR /YouNote/
 COPY --from=builder /github.com/Snake1-1eyes/Test_Ozon/.bin .
 COPY --from=builder /github.com/Snake1-1eyes/Test_Ozon/.env ./
 
-EXPOSE 8080
+EXPOSE 8080 9090
 
 ENTRYPOINT ["./.bin"]
