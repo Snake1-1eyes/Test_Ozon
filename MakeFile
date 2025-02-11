@@ -1,0 +1,16 @@
+lint:
+	golangci-lint run --config=.golangci.yaml
+
+start:
+ifeq ($(STORAGE),postgres)
+	docker compose --profile postgres -f docker-compose.yml up -d --build
+else
+	docker compose -f docker-compose.inmemory.yml up -d --build
+endif
+
+stop:
+ifeq ($(STORAGE),postgres)
+	docker compose -f docker-compose.yml down --volumes
+else
+	docker compose -f docker-compose.inmemory.yml down --volumes
+endif
