@@ -14,13 +14,11 @@ import (
 	grpcDelivery "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/delivery/grpc"
 	shortenerDelivery "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/delivery/http"
 	inmemoryRepo "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/repo/inmemory"
-	postgresRepo "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/repo/postgres"
+	"github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/repo/postgres"
 	shortenerUsecase "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/usecase"
 
 	shortenerpb "github.com/Snake1-1eyes/Test_Ozon/internal/pkg/shortener/delivery/grpc/shortenerpb"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
@@ -42,20 +40,17 @@ func main() {
 		closeFunc = func() {}
 	} else {
 		fmt.Println("Using PostgreSQL storage")
-		db, err := pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+
+		// Создаем пул соединений
+		pool, err := postgres.NewPostgresPool(context.Background(), os.Getenv("DATABASE_URL"))
 		if err != nil {
-			fmt.Println("Error connecting to database:", err)
+			fmt.Println("Error creating connection pool:", err)
 			return
 		}
-		conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-		if err != nil {
-			fmt.Println("Error connecting to database:", err)
-			db.Close()
-			return
-		}
-		repoInstance = postgresRepo.NewShortenerRepo(db, *conn)
+
+		repoInstance = postgres.NewShortenerRepo(pool)
 		closeFunc = func() {
-			db.Close()
+			pool.Close()
 		}
 	}
 	defer closeFunc()

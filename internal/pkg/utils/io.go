@@ -12,7 +12,7 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-func GetRequestData(r *http.Request, requestData interface{}) error {
+func GetRequestData(r *http.Request, requestData any) error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func GetRequestData(r *http.Request, requestData interface{}) error {
 	return nil
 }
 
-func WriteResponseData(w http.ResponseWriter, responseData interface{}, successStatusCode int) error {
+func WriteResponseData(w http.ResponseWriter, responseData any, successStatusCode int) error {
 	body, err := json.Marshal(responseData)
 	if err != nil {
 		return fmt.Errorf("error in marshalling response body: %w", err)

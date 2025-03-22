@@ -3,28 +3,46 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Snake1-1eyes/Test_Ozon/internal/models"
-	"github.com/jackc/pgtype/pgxtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type ShortenerRepo struct {
-	db   pgxtype.Querier
-	conn pgx.Conn
+	pool *pgxpool.Pool
 }
 
-func NewShortenerRepo(db pgxtype.Querier, conn pgx.Conn) *ShortenerRepo {
+func NewShortenerRepo(pool *pgxpool.Pool) *ShortenerRepo {
 	return &ShortenerRepo{
-		db:   db,
-		conn: conn,
+		pool: pool,
 	}
+}
+
+func NewPostgresPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+	cfg, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse connection string: %v", err)
+	}
+
+	cfg.MinConns = 5
+	cfg.MaxConns = 30
+	cfg.MaxConnLifetime = 3600
+	cfg.MaxConnIdleTime = 1800
+	cfg.HealthCheckPeriod = 300
+
+	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create connection pool: %v", err)
+	}
+
+	return pool, nil
 }
 
 func (repo *ShortenerRepo) CreateAndSaveShortLink(originalURL string) (string, error) {
 	var existingShortURL string
-	err := repo.db.QueryRow(
-		context.TODO(),
+	err := repo.pool.QueryRow(
+		context.Background(),
 		"SELECT short_url FROM shorteners WHERE original_url = $1",
 		originalURL,
 	).Scan(&existingShortURL)
@@ -36,11 +54,11 @@ func (repo *ShortenerRepo) CreateAndSaveShortLink(originalURL string) (string, e
 	for i := 0; i < 5; i++ {
 		shortURL, err = models.GenerateShortURL()
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to generate short URL: %v", err)
 		}
 		var dummy string
-		err = repo.db.QueryRow(
-			context.TODO(),
+		err = repo.pool.QueryRow(
+			context.Background(),
 			"SELECT original_url FROM shorteners WHERE short_url = $1",
 			shortURL,
 		).Scan(&dummy)
@@ -48,17 +66,17 @@ func (repo *ShortenerRepo) CreateAndSaveShortLink(originalURL string) (string, e
 			break
 		}
 		if i == 4 {
-			return "", errors.New("failed to generate a unique short URL")
+			return "", errors.New("failed to generate a unique short URL after 5 attempts")
 		}
 	}
 
-	_, err = repo.db.Exec(
-		context.TODO(),
+	_, err = repo.pool.Exec(
+		context.Background(),
 		"INSERT INTO shorteners (original_url, short_url) VALUES ($1, $2)",
 		originalURL, shortURL,
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to save URL: %v", err)
 	}
 
 	return shortURL, nil
@@ -66,13 +84,13 @@ func (repo *ShortenerRepo) CreateAndSaveShortLink(originalURL string) (string, e
 
 func (repo *ShortenerRepo) GetShortLink(shortURL string) (string, error) {
 	var originalURL string
-	err := repo.db.QueryRow(
-		context.TODO(),
+	err := repo.pool.QueryRow(
+		context.Background(),
 		"SELECT original_url FROM shorteners WHERE short_url = $1",
 		shortURL,
 	).Scan(&originalURL)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get original URL: %v", err)
 	}
 	return originalURL, nil
 }
